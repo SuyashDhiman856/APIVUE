@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Terminal, ArrowRight, Github, Chrome } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
+import { useUserStore } from '../store/useUserStore';
 import { validateEmail } from '../lib/validation';
 import { toast } from 'sonner';
 import { useThemeStore } from '../store/useThemeStore';
@@ -13,7 +14,10 @@ export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const login = useAuthStore(state => state.login);
+  const { findUser } = useUserStore();
   const { primaryColor } = useThemeStore();
+
+  const [activeRole, setActiveRole] = useState<'user' | 'org'>('user');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,14 +36,37 @@ export const LoginPage = () => {
     
     // Mock login delay
     setTimeout(() => {
+      const user = findUser(email);
+
+      if (!user) {
+        toast.error('Account not found. Please register first.');
+        setIsLoading(false);
+        return;
+      }
+
+      if (user.role !== activeRole) {
+        toast.error(`This account is not registered as an ${activeRole === 'user' ? 'Developer' : 'Organization'}`);
+        setIsLoading(false);
+        return;
+      }
+
+      // In a real app we'd check password, but we'll mock it here
+      // For this demo, let's assume 'password123' or the registered password works
+      if (password !== 'password123' && password !== user.password) {
+        toast.error('Invalid password.');
+        setIsLoading(false);
+        return;
+      }
+
       login({
-        id: 'u1',
-        name: 'Alex Developer',
-        email: email,
-        role: 'user'
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
       }, 'mock-token');
+
       toast.success('Welcome back!');
-      navigate('/dashboard');
+      navigate(activeRole === 'user' ? '/dashboard' : '/dashboard/org');
       setIsLoading(false);
     }, 1000);
   };
@@ -49,19 +76,19 @@ export const LoginPage = () => {
     // Mock Google Login
     setTimeout(() => {
       login({
-        id: 'u2',
-        name: 'Google User',
+        id: activeRole === 'user' ? 'u2' : 'o2',
+        name: activeRole === 'user' ? 'Google User' : 'Google Auth Org',
         email: 'user@gmail.com',
-        role: 'user'
+        role: activeRole
       }, 'google-token');
       toast.success('Signed in with Google');
-      navigate('/dashboard');
+      navigate(activeRole === 'user' ? '/dashboard' : '/dashboard/org');
       setIsLoading(false);
     }, 1000);
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4">
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 bg-[var(--background)] transition-colors">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -81,6 +108,30 @@ export const LoginPage = () => {
           <p className="text-zinc-500 dark:text-zinc-400 text-sm">Sign in to your APIVUE account</p>
         </div>
 
+        {/* Role Toggle */}
+        <div className="flex p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl mb-6">
+          <button
+            onClick={() => setActiveRole('user')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeRole === 'user' 
+                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' 
+                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+            }`}
+          >
+            Developer
+          </button>
+          <button
+            onClick={() => setActiveRole('org')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeRole === 'org' 
+                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' 
+                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+            }`}
+          >
+            Organization
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1.5">Email Address</label>
@@ -90,7 +141,7 @@ export const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@company.com"
-              className="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm outline-none transition-all dark:text-white"
+              className="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm outline-none transition-all dark:text-white"
               style={{ '--focus-ring': primaryColor } as any}
               onFocus={(e) => {
                 e.currentTarget.style.boxShadow = `0 0 0 2px ${primaryColor}33`;
@@ -110,7 +161,7 @@ export const LoginPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm outline-none transition-all dark:text-white"
+              className="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm outline-none transition-all dark:text-white"
               style={{ '--focus-ring': primaryColor } as any}
               onFocus={(e) => {
                 e.currentTarget.style.boxShadow = `0 0 0 2px ${primaryColor}33`;

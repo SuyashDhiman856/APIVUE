@@ -1,7 +1,19 @@
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'user' | 'org';
+  avatar?: string;
+}
+
 export interface API {
   id: string;
   name: string;
   description: string;
+  longDescription?: string;
+  features?: string[];
+  useCases?: { title: string; description: string }[];
+  faq?: { question: string; answer: string }[];
   category: string;
   rating: number;
   usageCount: number;
@@ -12,12 +24,14 @@ export interface API {
   pricePerCall: number; // Price after limit
   endpoints: Endpoint[];
   versions: string[];
+  providerId: string;
+  status?: 'Published' | 'Draft' | 'Deprecated';
 }
 
 export interface Endpoint {
   id: string;
   name: string;
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   path: string;
   description: string;
   sampleRequest?: string; // JSON string
@@ -28,6 +42,8 @@ export interface Endpoint {
 
 export interface UserSubscription {
   apiId: string;
+  apiName: string;
+  apiProvider: string;
   apiKey: string;
   status: 'active' | 'revoked';
   usage: number;

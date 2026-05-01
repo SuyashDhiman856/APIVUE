@@ -10,6 +10,24 @@ const MOCK_APIS: API[] = [
     rating: 4.8,
     usageCount: 12500,
     provider: 'MeteorLogic',
+    providerId: 'o1',
+    longDescription: 'WeatherPro Global provides highly accurate, hyperlocal weather forecasts. Our proprietary AI models ingest data from thousands of sources to give you real-time updates on temperature, precipitation, wind speed, and more. Perfect for travel apps, agricultural planning, and hyper-local delivery services.',
+    features: [
+      'Real-time atmospheric data',
+      'Hyperlocal forecasts (1km resolution)',
+      'Global coverage for 200,000+ cities',
+      'Historical weather data access',
+      'Extreme weather alerts via Webhooks'
+    ],
+    useCases: [
+      { title: 'Logistics & Delivery', description: 'Optimize delivery routes based on real-time rain and snow alerts to prevent delays.' },
+      { title: 'Travel & Tourism', description: 'Show current weather and 10-day forecasts to help users plan their trips better.' },
+      { title: 'Agriculture', description: 'Monitor soil moisture and precise rainfall to maximize crop yield.' }
+    ],
+    faq: [
+      { question: 'How often is the data updated?', answer: 'Our real-time endpoints update every 15 minutes, while forecast data is refreshed every hour.' },
+      { question: 'Do you support coordinates?', answer: 'Yes, you can query by city name, zip code, or latitude/longitude coordinates.' }
+    ],
     price: 'Freemium',
     freeLimit: 1000,
     pricePerCall: 0.01,
@@ -21,9 +39,9 @@ const MOCK_APIS: API[] = [
         path: '/current', 
         description: 'Get current weather for a location with detailed atmospheric data.',
         parameters: [
-          { name: 'q', type: 'string', description: 'City name or coordinates', required: true, location: 'query' },
-          { name: 'units', type: 'string', description: 'metric or imperial', required: false, location: 'query' },
-          { name: 'lang', type: 'string', description: 'Language code (e.g., en, fr, de)', required: false, location: 'query' }
+          { name: 'q', type: 'string', description: 'The location to get weather for. Can be a city name (e.g., "London"), a US zip code, a UK postcode, or latitude/longitude coordinates.', required: true, location: 'query' },
+          { name: 'units', type: 'string', description: 'The unit system for measurements. Use "metric" for Celsius/km/h or "imperial" for Fahrenheit/mph.', required: false, location: 'query' },
+          { name: 'lang', type: 'string', description: 'The language for the weather condition text. Supports over 40 languages (e.g., "en", "es", "fr").', required: false, location: 'query' }
         ],
         sampleResponse: JSON.stringify({
           success: true,
@@ -87,8 +105,8 @@ const MOCK_APIS: API[] = [
         path: '/forecast', 
         description: 'Get 7-day forecast for a location including hourly data and astronomical information.',
         parameters: [
-          { name: 'q', type: 'string', description: 'City name or coordinates', required: true, location: 'query' },
-          { name: 'days', type: 'integer', description: 'Number of days (1-10)', required: true, location: 'query' }
+          { name: 'q', type: 'string', description: 'The location to get the forecast for. Supports city names, zip codes, and coordinates.', required: true, location: 'query' },
+          { name: 'days', type: 'integer', description: 'The number of days for the forecast. Must be an integer between 1 and 10.', required: true, location: 'query' }
         ],
         sampleResponse: JSON.stringify({
           success: true,
@@ -141,7 +159,7 @@ const MOCK_APIS: API[] = [
         path: '/search', 
         description: 'Search for city locations by name, zip code, or coordinates.',
         parameters: [
-          { name: 'q', type: 'string', description: 'Search query', required: true, location: 'query' }
+          { name: 'q', type: 'string', description: 'The search query to find locations. Can be a city name, partial name, or zip code.', required: true, location: 'query' }
         ],
         sampleResponse: JSON.stringify({
           success: true,
@@ -163,6 +181,24 @@ const MOCK_APIS: API[] = [
     rating: 4.9,
     usageCount: 8900,
     provider: 'DeepVision',
+    providerId: 'o2',
+    longDescription: 'VisionAI OCR is a state-of-the-art optical character recognition service that leverages deep learning to extract text from images and documents with unparalleled accuracy. It handles complex layouts, handwriting, and low-quality scans with ease.',
+    features: [
+      'Multi-language support (80+ languages)',
+      'Handwriting recognition',
+      'Table and form structure extraction',
+      'High-resolution image processing',
+      'Auto-rotation and cleaning'
+    ],
+    useCases: [
+      { title: 'Data Entry Automation', description: 'Automatically extract data from invoices and receipts into your accounting software.' },
+      { title: 'Document Digitization', description: 'Convert historical archives and paper documents into searchable digital formats.' },
+      { title: 'Identity Verification', description: 'Extract information from passports and IDs for secure user onboarding.' }
+    ],
+    faq: [
+      { question: 'What image formats are supported?', answer: 'We support JPG, PNG, WebP, and multi-page PDFs.' },
+      { question: 'Is my data stored?', answer: 'By default, images are processed and deleted immediately. We offer an optional storage service for auditing if required.' }
+    ],
     price: 'Paid',
     freeLimit: 100,
     pricePerCall: 0.05,
@@ -174,12 +210,12 @@ const MOCK_APIS: API[] = [
         path: '/analyze', 
         description: 'Analyze image and extract text with detailed layout analysis and confidence scores.',
         headers: [
-          { name: 'X-Vision-Priority', type: 'string', description: 'Priority level (high, normal, low)', required: false }
+          { name: 'X-Vision-Priority', type: 'string', description: 'Determines the processing priority of the request. Options: "high", "normal", "low". Default is "normal".', required: false }
         ],
         parameters: [
-          { name: 'image_url', type: 'string', description: 'Publicly accessible URL of the image', required: true, location: 'body' },
-          { name: 'language', type: 'string', description: 'Language code for OCR', required: false, location: 'body' },
-          { name: 'detect_orientation', type: 'boolean', description: 'Automatically detect image orientation', required: false, location: 'body' }
+          { name: 'image_url', type: 'string', description: 'The publicly accessible URL of the image to analyze. Supports JPG, PNG, and WebP formats.', required: true, location: 'body' },
+          { name: 'language', type: 'string', description: 'The ISO 639-1 language code to optimize OCR for specific scripts (e.g., "en", "ja").', required: false, location: 'body' },
+          { name: 'detect_orientation', type: 'boolean', description: 'Whether to automatically detect and correct the image orientation before processing.', required: false, location: 'body' }
         ],
         sampleRequest: JSON.stringify({
           image_url: "https://example.com/receipt.jpg",
@@ -243,8 +279,8 @@ const MOCK_APIS: API[] = [
         path: '/detect',
         description: 'Detect and classify objects within an image.',
         parameters: [
-          { name: 'image_url', type: 'string', description: 'URL of the image', required: true, location: 'body' },
-          { name: 'min_confidence', type: 'number', description: 'Minimum confidence threshold (0-1)', required: false, location: 'body' }
+          { name: 'image_url', type: 'string', description: 'The URL of the image to process for object detection.', required: true, location: 'body' },
+          { name: 'min_confidence', type: 'number', description: 'The minimum confidence score (0.0 to 1.0) for an object to be included in the results.', required: false, location: 'body' }
         ],
         sampleResponse: JSON.stringify({
           success: true,
@@ -268,6 +304,24 @@ const MOCK_APIS: API[] = [
     rating: 4.7,
     usageCount: 45000,
     provider: 'CoinData',
+    providerId: 'o3',
+    longDescription: 'CryptoTrack Realtime provides institutional-grade cryptocurrency data. We aggregate prices from over 500 exchanges globally to provide a single, clean source of truth for market caps, volume, and 24h price changes. Whether you are building a wallet, an exchange, or a tax tool, CryptoTrack has the data you need.',
+    features: [
+      '500+ Exchange aggregations',
+      'WebSocket & REST support',
+      'Historical OHLCV data',
+      'Global market cap tracking',
+      'Smart contract event monitoring'
+    ],
+    useCases: [
+      { title: 'Portfolio Management', description: 'Real-time tracking of asset values against global averages.' },
+      { title: 'Arbitrage Bots', description: 'Low-latency data to find price discrepancies between exchanges.' },
+      { title: 'Tax & Compliance', description: 'Full historical audit trail of prices in local fiat currencies.' }
+    ],
+    faq: [
+      { question: 'What exchanges are included?', answer: 'We include major exchanges like Binance, Coinbase, Kraken, and decentralized exchanges like Uniswap.' },
+      { question: 'Is the data adjusted for inflation?', answer: 'Data is presented in nominal terms of the base currency selected.' }
+    ],
     price: 'Free',
     freeLimit: 50000,
     pricePerCall: 0,
@@ -279,8 +333,8 @@ const MOCK_APIS: API[] = [
         path: '/prices', 
         description: 'Get latest prices for all major cryptocurrencies with market cap and 24h change.',
         parameters: [
-          { name: 'vs_currency', type: 'string', description: 'Target currency (usd, eur, jpy)', required: false, location: 'query' },
-          { name: 'ids', type: 'string', description: 'Comma separated list of coin IDs', required: false, location: 'query' }
+          { name: 'vs_currency', type: 'string', description: 'The target currency for price data (e.g., "usd", "eur", "jpy", "gbp").', required: false, location: 'query' },
+          { name: 'ids', type: 'string', description: 'A comma-separated list of coin IDs to filter by (e.g., "bitcoin,ethereum"). If omitted, all coins are returned.', required: false, location: 'query' }
         ],
         sampleResponse: JSON.stringify({
           success: true,
@@ -302,8 +356,8 @@ const MOCK_APIS: API[] = [
         path: '/history',
         description: 'Get historical market data for a specific coin.',
         parameters: [
-          { name: 'id', type: 'string', description: 'Coin ID', required: true, location: 'path' },
-          { name: 'days', type: 'integer', description: 'Number of days back', required: true, location: 'query' }
+          { name: 'id', type: 'string', description: 'The unique identifier of the cryptocurrency (e.g., "bitcoin").', required: true, location: 'path' },
+          { name: 'days', type: 'integer', description: 'The number of days of historical data to retrieve.', required: true, location: 'query' }
         ],
         sampleResponse: JSON.stringify({
           success: true,
@@ -332,6 +386,7 @@ const MOCK_APIS: API[] = [
     rating: 4.6,
     usageCount: 3200,
     provider: 'MapStack',
+    providerId: 'o4',
     price: 'Freemium',
     freeLimit: 500,
     pricePerCall: 0.02,
@@ -343,8 +398,8 @@ const MOCK_APIS: API[] = [
         path: '/search', 
         description: 'Search for coordinates by address with detailed components.',
         parameters: [
-          { name: 'text', type: 'string', description: 'Address to search for', required: true, location: 'query' },
-          { name: 'boundary.country', type: 'string', description: 'ISO-3166 alpha-3 country code', required: false, location: 'query' }
+          { name: 'text', type: 'string', description: 'The address or place name to search for (e.g., "1600 Amphitheatre Pkwy, Mountain View, CA").', required: true, location: 'query' },
+          { name: 'boundary.country', type: 'string', description: 'Filter results by a specific country using the ISO-3166 alpha-3 code (e.g., "USA", "GBR").', required: false, location: 'query' }
         ],
         sampleResponse: JSON.stringify({
           success: true,
@@ -380,8 +435,8 @@ const MOCK_APIS: API[] = [
         path: '/reverse',
         description: 'Get address information from coordinates.',
         parameters: [
-          { name: 'lat', type: 'number', description: 'Latitude', required: true, location: 'query' },
-          { name: 'lon', type: 'number', description: 'Longitude', required: true, location: 'query' }
+          { name: 'lat', type: 'number', description: 'The latitude coordinate of the location.', required: true, location: 'query' },
+          { name: 'lon', type: 'number', description: 'The longitude coordinate of the location.', required: true, location: 'query' }
         ],
         sampleResponse: JSON.stringify({
           success: true,
@@ -402,6 +457,174 @@ const MOCK_APIS: API[] = [
       }
     ],
     versions: ['1.0.0', '1.5.0']
+  },
+  {
+    id: '5',
+    name: 'TranslateFlow',
+    description: 'Neural machine translation for 100+ languages with context awareness.',
+    category: 'Language',
+    rating: 4.7,
+    usageCount: 15400,
+    provider: 'LinguistAI',
+    providerId: 'o5',
+    price: 'Paid',
+    freeLimit: 5000,
+    pricePerCall: 0.005,
+    endpoints: [
+      {
+        id: 'e6',
+        name: 'Translate Text',
+        method: 'POST',
+        path: '/translate',
+        description: 'Translate text from one language to another.',
+        parameters: [
+          { name: 'text', type: 'string', description: 'The source text to be translated. Maximum 5000 characters per request.', required: true, location: 'body' },
+          { name: 'source', type: 'string', description: 'The ISO 639-1 code of the source language. If omitted, the system will auto-detect the language.', required: false, location: 'body' },
+          { name: 'target', type: 'string', description: 'The ISO 639-1 code of the target language for translation.', required: true, location: 'body' }
+        ],
+        sampleResponse: JSON.stringify({ success: true, translatedText: "Hola mundo", detectedSourceLanguage: "en" }, null, 2)
+      }
+    ],
+    versions: ['1.0.0', '2.1.0']
+  },
+  {
+    id: '6',
+    name: 'StockPulse API',
+    description: 'Real-time stock market data, historical charts, and financial indicators.',
+    category: 'Finance',
+    rating: 4.5,
+    usageCount: 21000,
+    provider: 'MarketDataCorp',
+    providerId: 'o1',
+    price: 'Freemium',
+    freeLimit: 100,
+    pricePerCall: 0.10,
+    endpoints: [
+      {
+        id: 'e7',
+        name: 'Get Quote',
+        method: 'GET',
+        path: '/quote/{symbol}',
+        description: 'Get real-time quote for a stock symbol.',
+        parameters: [
+          { name: 'symbol', type: 'string', description: 'The stock ticker symbol to retrieve data for (e.g., "AAPL", "MSFT", "GOOGL").', required: true, location: 'path' }
+        ],
+        sampleResponse: JSON.stringify({ symbol: "AAPL", price: 185.92, change: 1.25, percentChange: 0.68 }, null, 2)
+      }
+    ],
+    versions: ['1.0.0']
+  },
+  {
+    id: '7',
+    name: 'ImageGen Pro',
+    description: 'Generate high-quality images from text descriptions using stable diffusion.',
+    category: 'AI',
+    rating: 4.9,
+    usageCount: 12000,
+    provider: 'CreativeAI',
+    providerId: 'o7',
+    price: 'Paid',
+    freeLimit: 10,
+    pricePerCall: 0.25,
+    endpoints: [
+      {
+        id: 'e8',
+        name: 'Generate Image',
+        method: 'POST',
+        path: '/generate',
+        description: 'Generate an image from a text prompt.',
+        parameters: [
+          { name: 'prompt', type: 'string', description: 'A detailed text description of the image you want to generate.', required: true, location: 'body' },
+          { name: 'size', type: 'string', description: 'The desired dimensions of the generated image (e.g., "256x256", "512x512", "1024x1024").', required: false, location: 'body' }
+        ],
+        sampleResponse: JSON.stringify({ success: true, imageUrl: "https://example.com/generated.png" }, null, 2)
+      }
+    ],
+    versions: ['1.0.0', '1.1.0']
+  },
+  {
+    id: '8',
+    name: 'HealthMetric API',
+    description: 'Track fitness metrics, sleep patterns, and nutritional data.',
+    category: 'Health',
+    rating: 4.4,
+    usageCount: 5600,
+    provider: 'FitTech',
+    providerId: 'o8',
+    price: 'Freemium',
+    freeLimit: 1000,
+    pricePerCall: 0.02,
+    endpoints: [
+      {
+        id: 'e9',
+        name: 'Log Activity',
+        method: 'POST',
+        path: '/activity',
+        description: 'Log a new fitness activity.',
+        parameters: [
+          { name: 'type', type: 'string', description: 'The type of fitness activity (e.g., "running", "cycling", "swimming").', required: true, location: 'body' },
+          { name: 'duration', type: 'number', description: 'The duration of the activity in minutes.', required: true, location: 'body' }
+        ],
+        sampleResponse: JSON.stringify({ success: true, activityId: "act_123" }, null, 2)
+      }
+    ],
+    versions: ['1.0.0']
+  },
+  {
+    id: '9',
+    name: 'SecureAuth MFA',
+    description: 'Multi-factor authentication via SMS, Email, and TOTP.',
+    category: 'Security',
+    rating: 4.8,
+    usageCount: 34000,
+    provider: 'SafeGuard',
+    providerId: 'o9',
+    price: 'Paid',
+    freeLimit: 100,
+    pricePerCall: 0.03,
+    endpoints: [
+      {
+        id: 'e10',
+        name: 'Send OTP',
+        method: 'POST',
+        path: '/otp/send',
+        description: 'Send a one-time password.',
+        parameters: [
+          { name: 'to', type: 'string', description: 'The recipient identifier, such as a phone number for SMS or an email address.', required: true, location: 'body' },
+          { name: 'channel', type: 'string', description: 'The delivery channel for the OTP. Supported values: "sms", "email".', required: true, location: 'body' }
+        ],
+        sampleResponse: JSON.stringify({ success: true, requestId: "req_555" }, null, 2)
+      }
+    ],
+    versions: ['1.0.0', '2.0.0']
+  },
+  {
+    id: '10',
+    name: 'NewsWire API',
+    description: 'Real-time news headlines and articles from 5000+ sources.',
+    category: 'News',
+    rating: 4.3,
+    usageCount: 18000,
+    provider: 'GlobalNews',
+    providerId: 'o10',
+    price: 'Free',
+    freeLimit: 10000,
+    pricePerCall: 0,
+    endpoints: [
+      {
+        id: 'e11',
+        name: 'Get Headlines',
+        method: 'GET',
+        path: '/headlines',
+        description: 'Get latest news headlines.',
+        parameters: [
+          { name: 'country', type: 'string', description: 'The 2-letter ISO 3166-1 country code to filter news by (e.g., "us", "gb", "in").', required: false, location: 'query' },
+          { name: 'category', type: 'string', description: 'The news category to filter by (e.g., "business", "technology", "sports").', required: false, location: 'query' }
+        ],
+        sampleResponse: JSON.stringify({ status: "ok", totalResults: 38, articles: [] }, null, 2)
+      }
+    ],
+    versions: ['1.0.0']
   }
 ];
 
@@ -409,6 +632,8 @@ const MOCK_APIS: API[] = [
 let userSubscriptions: UserSubscription[] = [
   {
     apiId: '1',
+    apiName: 'WeatherPro Global',
+    apiProvider: 'MeteorLogic',
     apiKey: 'nx_live_51M...9a2',
     status: 'active',
     usage: 450,
@@ -429,6 +654,10 @@ export const apiClient = {
     await new Promise(r => setTimeout(r, 600));
     return [...userSubscriptions];
   },
+  getOrgApis: async (orgName: string): Promise<API[]> => {
+    await new Promise(r => setTimeout(r, 700));
+    return MOCK_APIS.filter(api => api.provider === orgName);
+  },
   subscribeToApi: async (apiId: string): Promise<UserSubscription> => {
     await new Promise(r => setTimeout(r, 1000));
     
@@ -436,9 +665,14 @@ export const apiClient = {
     const existing = userSubscriptions.find(s => s.apiId === apiId);
     if (existing) return existing;
 
+    const api = MOCK_APIS.find(a => a.id === apiId);
+    if (!api) throw new Error('API not found');
+
     const randomKey = 'nx_live_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const newSubscription: UserSubscription = {
       apiId,
+      apiName: api.name,
+      apiProvider: api.provider,
       apiKey: randomKey,
       status: 'active',
       usage: 0,

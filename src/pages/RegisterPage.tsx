@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Terminal, ArrowRight, Github, Building2, Chrome } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
+import { useUserStore } from '../store/useUserStore';
 import { validateEmail } from '../lib/validation';
 import { toast } from 'sonner';
 import { useThemeStore } from '../store/useThemeStore';
@@ -14,11 +15,19 @@ export const RegisterPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const login = useAuthStore(state => state.login);
+  const { addUser, findUser } = useUserStore();
   const { primaryColor, mode } = useThemeStore();
+
+  const [activeRole, setActiveRole] = useState<'user' | 'org'>('user');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (activeRole === 'org') {
+      navigate('/register-org');
+      return;
+    }
+
     if (name.length < 2) {
       toast.error('Please enter your full name.');
       return;
@@ -38,12 +47,30 @@ export const RegisterPage = () => {
     
     // Mock registration delay
     setTimeout(() => {
-      login({
-        id: 'u1',
+      const existingUser = findUser(email);
+      if (existingUser) {
+        toast.error('An account with this email already exists.');
+        setIsLoading(false);
+        return;
+      }
+
+      const newUser = {
+        id: Math.random().toString(36).substr(2, 9),
         name: name,
         email: email,
-        role: 'user'
+        role: 'user' as const,
+        password: password
+      };
+
+      addUser(newUser);
+
+      login({
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role
       }, 'mock-token');
+
       toast.success('Account created successfully!');
       navigate('/dashboard');
       setIsLoading(false);
@@ -58,16 +85,16 @@ export const RegisterPage = () => {
         id: 'u2',
         name: 'Google User',
         email: 'user@gmail.com',
-        role: 'user'
+        role: activeRole
       }, 'google-token');
       toast.success('Signed up with Google');
-      navigate('/dashboard');
+      navigate(activeRole === 'user' ? '/dashboard' : '/dashboard/org');
       setIsLoading(false);
     }, 1000);
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 py-12">
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 py-12 bg-[var(--background)] transition-colors">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -87,7 +114,49 @@ export const RegisterPage = () => {
           <p className="text-zinc-500 dark:text-zinc-400 text-sm">Join the APIVUE developer community</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Role Toggle */}
+        <div className="flex p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl mb-6">
+          <button
+            onClick={() => setActiveRole('user')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeRole === 'user' 
+                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' 
+                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+            }`}
+          >
+            Developer
+          </button>
+          <button
+            onClick={() => setActiveRole('org')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeRole === 'org' 
+                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' 
+                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+            }`}
+          >
+            Organization
+          </button>
+        </div>
+
+        {activeRole === 'org' ? (
+          <div className="space-y-6">
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                Organizations on APIVUE get access to specialized tools for publishing, managing, and monetizing APIs at scale.
+              </p>
+            </div>
+            <button 
+              onClick={() => navigate('/register-org')}
+              className="w-full text-white font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 group transition-all"
+              style={{ backgroundColor: 'var(--primary)' }}
+            >
+              Start Organization Onboarding
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        ) : (
+          <>
+            <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1.5">Full Name</label>
             <input
@@ -96,7 +165,7 @@ export const RegisterPage = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="John Doe"
-              className="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm outline-none transition-all dark:text-white"
+              className="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm outline-none transition-all dark:text-white"
               style={{ '--focus-ring': primaryColor } as any}
               onFocus={(e) => {
                 e.currentTarget.style.boxShadow = `0 0 0 2px ${primaryColor}33`;
@@ -116,7 +185,7 @@ export const RegisterPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@company.com"
-              className="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm outline-none transition-all dark:text-white"
+              className="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm outline-none transition-all dark:text-white"
               style={{ '--focus-ring': primaryColor } as any}
               onFocus={(e) => {
                 e.currentTarget.style.boxShadow = `0 0 0 2px ${primaryColor}33`;
@@ -136,7 +205,7 @@ export const RegisterPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm outline-none transition-all dark:text-white"
+              className="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm outline-none transition-all dark:text-white"
               style={{ '--focus-ring': primaryColor } as any}
               onFocus={(e) => {
                 e.currentTarget.style.boxShadow = `0 0 0 2px ${primaryColor}33`;
@@ -186,6 +255,8 @@ export const RegisterPage = () => {
             GitHub
           </button>
         </div>
+        </>
+        )}
 
         <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800">
           <Link 

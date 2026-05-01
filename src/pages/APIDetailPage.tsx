@@ -19,47 +19,46 @@ import {
   ChevronDown,
   Info,
   X,
-  Loader2
+  Loader2,
+  BarChart3
 } from 'lucide-react';
 import { apiClient } from '../lib/api-client';
 import { APIDocumentation } from '../components/api-docs/APIDocumentation';
+import { APIAnalytics } from '../components/analytics/APIAnalytics';
+import { APIPlayground } from '../components/api-docs/APIPlayground';
 import { useState, useMemo, useEffect } from 'react';
 import { useThemeStore } from '../store/useThemeStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { useApiStore } from '../store/useApiStore';
 import { toast } from 'sonner';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { atomDark, prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export const APIDetailPage = () => {
   const { apiId } = useParams<{ apiId: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'overview' | 'endpoints' | 'pricing'>('endpoints');
+  const [activeTab, setActiveTab] = useState<'overview' | 'endpoints' | 'pricing' | 'analytics'>('overview');
   const [selectedEndpoint, setSelectedEndpoint] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVersion, setSelectedVersion] = useState<string>('');
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [showMobileEndpoints, setShowMobileEndpoints] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<string | null>(null);
+  const [isSubscribing, setIsSubscribing] = useState(false);
   
   const { primaryColor, mode } = useThemeStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { apis, subscribeToApi } = useApiStore();
+  const allSubscriptions = useApiStore(state => state.subscriptions);
   const [copied, setCopied] = useState(false);
 
-  const { data: api, isLoading } = useQuery({
-    queryKey: ['api', apiId],
-    queryFn: () => apiClient.getApiById(apiId!),
-    enabled: !!apiId
-  });
+  const api = useMemo(() => apis.find(a => a.id === apiId), [apis, apiId]);
+  
+  const subscriptions = useMemo(() => {
+    if (!user) return [];
+    return allSubscriptions[user.id] || [];
+  }, [user, allSubscriptions]);
 
-  const { data: subscriptions } = useQuery({
-    queryKey: ['subscriptions'],
-    queryFn: () => apiClient.getUserSubscriptions(),
-    enabled: isAuthenticated
-  });
-
-  const subscription = subscriptions?.find(s => s.apiId === apiId);
+  const subscription = useMemo(() => subscriptions.find(s => s.apiId === apiId), [subscriptions, apiId]);
 
   useEffect(() => {
     if (api && !selectedVersion) {
@@ -78,18 +77,6 @@ export const APIDetailPage = () => {
     );
   }, [api, searchQuery]);
 
-  const subscribeMutation = useMutation({
-    mutationFn: (id: string) => apiClient.subscribeToApi(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
-      toast.success('Successfully subscribed to API!');
-      setShowDisclaimer(false);
-    },
-    onError: () => {
-      toast.error('Failed to subscribe to API');
-    }
-  });
-
   const handleSubscribeClick = () => {
     if (!isAuthenticated) {
       toast.error('Please login to subscribe to APIs');
@@ -100,23 +87,15 @@ export const APIDetailPage = () => {
   };
 
   const confirmSubscription = () => {
-    subscribeMutation.mutate(apiId!);
-  };
-
-  const handleRunRequest = async () => {
-    if (!subscription) {
-      toast.error('Please subscribe to test the API');
-      return;
-    }
-    setIsTesting(true);
-    setTestResult(null);
-    
-    // Simulate API call
-    await new Promise(r => setTimeout(r, 1500));
-    
-    setTestResult(selectedEndpoint.sampleResponse);
-    setIsTesting(false);
-    toast.success('Request completed successfully');
+    if (!user || !api) return;
+    setIsSubscribing(true);
+    // Mock network delay
+    setTimeout(() => {
+      subscribeToApi(user.id, api);
+      toast.success('Successfully subscribed to API!');
+      setShowDisclaimer(false);
+      setIsSubscribing(false);
+    }, 800);
   };
 
   const copyToClipboard = (text: string) => {
@@ -125,19 +104,6 @@ export const APIDetailPage = () => {
     setTimeout(() => setCopied(false), 2000);
     toast.success('API Key copied to clipboard');
   };
-
-  if (isLoading) return (
-    <div className="max-w-7xl mx-auto px-4 py-20">
-      <div className="h-8 w-32 bg-zinc-100 animate-pulse rounded mb-8" />
-      <div className="grid grid-cols-3 gap-8">
-        <div className="col-span-2 space-y-4">
-          <div className="h-12 w-full bg-zinc-100 animate-pulse rounded" />
-          <div className="h-64 w-full bg-zinc-100 animate-pulse rounded" />
-        </div>
-        <div className="h-96 w-full bg-zinc-100 animate-pulse rounded" />
-      </div>
-    </div>
-  );
 
   if (!api) return <div className="text-center py-20">API not found</div>;
 
@@ -210,16 +176,28 @@ export const APIDetailPage = () => {
                 {!subscription ? (
                   <button 
                     onClick={handleSubscribeClick}
-                    disabled={subscribeMutation.isPending}
+                    disabled={isSubscribing}
                     className="btn-primary px-4 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm transition-all duration-300 whitespace-nowrap"
                     style={{ boxShadow: `0 0 15px ${primaryColor}4d` }}
                   >
-                    {subscribeMutation.isPending ? 'Subscribing...' : 'Subscribe for Free'}
+                    {isSubscribing ? 'Subscribing...' : 'Subscribe for Free'}
                   </button>
                 ) : (
                   <div className="flex items-center gap-2 sm:gap-3">
                     <button 
                       onClick={() => {
+                        setActiveTab('analytics');
+                        const playground = document.getElementById('api-playground');
+                        playground?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl border border-[var(--border)] hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      Analytics
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setActiveTab('endpoints');
                         const playground = document.getElementById('api-playground');
                         playground?.scrollIntoView({ behavior: 'smooth' });
                       }}
@@ -271,7 +249,7 @@ export const APIDetailPage = () => {
       {/* Main Content with Sidebar */}
       <div className="flex-grow flex overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-80 border-r border-[var(--border)] bg-[var(--card)] flex flex-col hidden lg:flex">
+        <aside className="w-80 border-r border-[var(--border)] bg-white dark:bg-zinc-950 flex flex-col hidden lg:flex transition-colors">
           <div className="p-4 border-b border-[var(--border)]">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -280,7 +258,7 @@ export const APIDetailPage = () => {
                 placeholder="Search Endpoints..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[var(--background)] border border-[var(--border)] rounded-xl text-sm outline-none focus:ring-2 transition-all"
+                className="w-full pl-10 pr-4 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 transition-all text-black dark:text-white"
                 style={{ '--tw-ring-color': `${primaryColor}33` } as any}
               />
             </div>
@@ -294,7 +272,6 @@ export const APIDetailPage = () => {
                   key={ep.id}
                   onClick={() => {
                     setSelectedEndpoint(ep);
-                    setTestResult(null);
                   }}
                   className={`w-full text-left px-3 py-2.5 rounded-xl transition-all flex flex-col gap-1 ${
                     selectedEndpoint?.id === ep.id 
@@ -327,24 +304,155 @@ export const APIDetailPage = () => {
         {/* Content Area */}
         <main className="flex-grow overflow-y-auto custom-scrollbar bg-[var(--background)]">
           <div className="max-w-5xl mx-auto p-4 sm:p-8">
-            {selectedEndpoint ? (
-              <div className="space-y-8 sm:space-y-12">
-                {/* Endpoint Header */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <span className={`text-[10px] sm:text-xs font-bold px-2 py-1 rounded ${
-                      selectedEndpoint.method === 'GET' ? 'bg-blue-500/10 text-blue-500' : 'bg-emerald-500/10 text-emerald-500'
-                    }`}>
-                      {selectedEndpoint.method}
-                    </span>
-                    <h2 className="text-xl sm:text-2xl font-bold">{selectedEndpoint.name}</h2>
+            {/* Tabs */}
+            <div className="flex items-center gap-8 border-b border-[var(--border)] mb-8">
+              <button 
+                onClick={() => setActiveTab('overview')}
+                className={`pb-4 text-sm font-bold transition-all relative ${
+                  activeTab === 'overview' ? 'text-[var(--foreground)]' : 'text-zinc-400 hover:text-zinc-600'
+                }`}
+              >
+                Overview
+                {activeTab === 'overview' && (
+                  <motion.div layoutId="activeDetailTab" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: primaryColor }} />
+                )}
+              </button>
+              <button 
+                onClick={() => setActiveTab('endpoints')}
+                className={`pb-4 text-sm font-bold transition-all relative ${
+                  activeTab === 'endpoints' ? 'text-[var(--foreground)]' : 'text-zinc-400 hover:text-zinc-600'
+                }`}
+              >
+                Endpoints
+                {activeTab === 'endpoints' && (
+                  <motion.div layoutId="activeDetailTab" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: primaryColor }} />
+                )}
+              </button>
+              <button 
+                onClick={() => setActiveTab('analytics')}
+                className={`pb-4 text-sm font-bold transition-all relative ${
+                  activeTab === 'analytics' ? 'text-[var(--foreground)]' : 'text-zinc-400 hover:text-zinc-600'
+                }`}
+              >
+                Analytics
+                {activeTab === 'analytics' && (
+                  <motion.div layoutId="activeDetailTab" className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: primaryColor }} />
+                )}
+              </button>
+            </div>
+
+            {activeTab === 'overview' ? (
+              <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Hero Section of Overview */}
+                <div className="relative overflow-hidden rounded-3xl p-8 sm:p-12 border border-[var(--border)] bg-zinc-50 dark:bg-zinc-900/50">
+                  <div className="max-w-3xl">
+                    <h2 className="text-3xl sm:text-4xl font-bold mb-6">About {api.name}</h2>
+                    <p className="text-lg text-zinc-500 leading-relaxed mb-8">
+                      {api.longDescription || api.description}
+                    </p>
+                    <div className="flex flex-wrap gap-4">
+                       <button 
+                        onClick={() => setActiveTab('endpoints')}
+                        className="px-6 py-2.5 rounded-xl font-bold text-white transition-all shadow-lg hover:brightness-110 active:scale-95"
+                        style={{ backgroundColor: primaryColor }}
+                       >
+                        Explore Documentation
+                       </button>
+                       <Link to="/marketplace" className="px-6 py-2.5 rounded-xl font-bold border border-[var(--border)] hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
+                        Similar APIs
+                       </Link>
+                    </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-[var(--card)] border border-[var(--border)] rounded-xl font-mono text-xs sm:text-sm overflow-hidden">
-                    <span className="text-zinc-400 truncate">https://api.apivue.com/v1</span>
-                    <span className="text-[var(--foreground)] font-bold break-all sm:break-normal">{selectedEndpoint.path}</span>
-                  </div>
-                  <p className="text-sm sm:text-base text-zinc-500 leading-relaxed">{selectedEndpoint.description}</p>
                 </div>
+
+                {/* Features & Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                       <ShieldCheck className="w-6 h-6" style={{ color: primaryColor }} />
+                       Key Features
+                    </h3>
+                    <ul className="space-y-4">
+                      {(api.features || ['High Uptime', 'Global Scale', 'Easy Integration']).map((feature, i) => (
+                        <li key={i} className="flex items-start gap-3 text-zinc-500">
+                          <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bg-[var(--card)] border border-[var(--border)] p-8 rounded-3xl space-y-6">
+                     <h3 className="text-xl font-bold">Reliability</h3>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-[var(--border)]">
+                           <div className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Uptime</div>
+                           <div className="text-2xl font-bold text-emerald-500">99.9%</div>
+                        </div>
+                        <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-[var(--border)]">
+                           <div className="text-[10px] font-bold text-zinc-400 uppercase mb-1">Avg. Latency</div>
+                           <div className="text-2xl font-bold" style={{ color: primaryColor }}>120ms</div>
+                        </div>
+                     </div>
+                     <p className="text-xs text-zinc-400">
+                        Historical data based on the last 30 days of performance monitoring.
+                     </p>
+                  </div>
+                </div>
+
+                {/* Use Cases */}
+                {api.useCases && api.useCases.length > 0 && (
+                  <div className="space-y-6">
+                    <h3 className="text-xl font-bold">Use Cases</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      {api.useCases.map((uc, i) => (
+                        <div key={i} className="p-6 border border-[var(--border)] rounded-2xl bg-white dark:bg-zinc-950">
+                           <h4 className="font-bold mb-2" style={{ color: primaryColor }}>{uc.title}</h4>
+                           <p className="text-sm text-zinc-500 leading-relaxed">{uc.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* FAQ */}
+                {api.faq && api.faq.length > 0 && (
+                  <div className="space-y-6">
+                    <h3 className="text-xl font-bold">Frequently Asked Questions</h3>
+                    <div className="space-y-4">
+                      {api.faq.map((item, i) => (
+                        <details key={i} className="group border border-[var(--border)] rounded-2xl p-4 bg-[var(--card)] transition-all overflow-hidden cursor-pointer">
+                          <summary className="flex items-center justify-between font-bold text-sm sm:text-base list-none">
+                            {item.question}
+                            <ChevronDown className="w-5 h-5 text-zinc-400 group-open:rotate-180 transition-transform" />
+                          </summary>
+                          <div className="pt-4 text-sm text-zinc-500 leading-relaxed">
+                            {item.answer}
+                          </div>
+                        </details>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : activeTab === 'endpoints' ? (
+              selectedEndpoint ? (
+                <div className="space-y-8 sm:space-y-12">
+                  {/* Endpoint Header */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[10px] sm:text-xs font-bold px-2 py-1 rounded ${
+                        selectedEndpoint.method === 'GET' ? 'bg-blue-500/10 text-blue-500' : 'bg-emerald-500/10 text-emerald-500'
+                      }`}>
+                        {selectedEndpoint.method}
+                      </span>
+                      <h2 className="text-xl sm:text-2xl font-bold">{selectedEndpoint.name}</h2>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl font-mono text-xs sm:text-sm overflow-hidden shadow-inner">
+                      <span className="text-zinc-500 truncate">https://api.apivue.com/v1</span>
+                      <span className="text-[var(--foreground)] font-bold break-all sm:break-normal">{selectedEndpoint.path}</span>
+                    </div>
+                    <p className="text-sm sm:text-base text-zinc-500 leading-relaxed">{selectedEndpoint.description}</p>
+                  </div>
 
                 {/* Documentation & Examples */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -412,33 +520,33 @@ export const APIDetailPage = () => {
                     <div>
                       <h3 className="text-xs sm:text-sm font-bold text-[var(--foreground)] uppercase tracking-wider mb-4 flex items-center gap-2">
                         <Activity className="w-4 h-4" />
-                        {testResult ? 'Test Result' : 'Example Response'}
+                        Example Response
                       </h3>
-                      <div className="bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-800 shadow-xl">
+                      <div className="bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-800 shadow-xl transition-colors">
                         <div className="flex items-center justify-between px-4 py-2 bg-zinc-900/50 border-b border-zinc-800">
                           <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${testResult ? 'bg-emerald-500' : 'bg-zinc-500'}`} />
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${testResult ? 'text-emerald-500' : 'text-zinc-500'}`}>
-                              {testResult ? '200 OK' : 'Sample Response'}
+                            <div className="w-2 h-2 rounded-full bg-zinc-500" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                              Sample Response
                             </span>
                           </div>
                           <span className="text-[10px] font-mono text-zinc-500">application/json</span>
                         </div>
-                        <div className="p-0">
+                        <div className="p-0 bg-zinc-950 overflow-x-auto scrollbar-hide transition-colors">
                           <SyntaxHighlighter
                             language="json"
                             style={atomDark}
-                            wrapLines={true}
-                            lineProps={{ style: { wordBreak: 'break-all', whiteSpace: 'pre-wrap' } }}
+                            wrapLines={false}
                             customStyle={{
                               margin: 0,
                               padding: '1.25rem sm:1.5rem',
                               fontSize: '0.75rem sm:0.875rem',
                               lineHeight: '1.5',
                               backgroundColor: 'transparent',
+                              minWidth: 'fit-content'
                             }}
                           >
-                            {testResult || selectedEndpoint.sampleResponse || '{}'}
+                            {selectedEndpoint.sampleResponse || '{}'}
                           </SyntaxHighlighter>
                         </div>
                       </div>
@@ -458,38 +566,15 @@ export const APIDetailPage = () => {
                       />
                     </div>
 
-                    <div id="api-playground" className="bg-zinc-900 dark:bg-black rounded-2xl p-5 sm:p-6 text-white border border-zinc-800 shadow-xl scroll-mt-24">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-white/10 rounded-lg">
-                          <Play className="w-5 h-5 text-white" />
-                        </div>
-                        <h3 className="text-lg font-bold">API Playground</h3>
-                      </div>
-                      <p className="text-zinc-400 text-sm mb-6">
-                        Test this endpoint directly from your browser using your API key.
-                      </p>
-                      <button 
-                        onClick={handleRunRequest}
-                        disabled={isTesting || !subscription}
-                        className="w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
-                        style={{ 
-                          backgroundColor: primaryColor,
-                          boxShadow: `0 0 20px ${primaryColor}66` 
-                        }}
-                      >
-                        {isTesting ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                        )}
-                        {isTesting ? 'Running...' : 'Run Request'}
-                      </button>
-                      {!subscription && (
-                        <p className="text-[10px] text-zinc-500 text-center mt-3">
-                          Subscribe to get an API key and enable the playground.
-                        </p>
-                      )}
+                  <div className="space-y-8">
+                    <div id="api-playground" className="scroll-mt-24">
+                      <APIPlayground 
+                        endpoint={selectedEndpoint} 
+                        apiKey={subscription?.apiKey}
+                        primaryColor={primaryColor}
+                      />
                     </div>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -498,7 +583,10 @@ export const APIDetailPage = () => {
                 <Activity className="w-12 h-12 sm:w-16 sm:h-16 text-zinc-200 mb-4" />
                 <h2 className="text-lg sm:text-xl font-bold text-zinc-400">Select an endpoint to view documentation</h2>
               </div>
-            )}
+            )
+          ) : (
+            <APIAnalytics apiId={apiId} title={`${api.name} Usage Analytics`} />
+          )}
           </div>
         </main>
       </div>
@@ -556,15 +644,15 @@ export const APIDetailPage = () => {
                   </button>
                   <button 
                     onClick={confirmSubscription}
-                    disabled={subscribeMutation.isPending}
+                    disabled={isSubscribing}
                     className="flex-1 py-3 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 text-sm sm:text-base order-1 sm:order-2"
                     style={{ 
                       backgroundColor: primaryColor,
                       boxShadow: `0 0-20px ${primaryColor}4d`
                     }}
                   >
-                    {subscribeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    {subscribeMutation.isPending ? 'Subscribing...' : 'I Understand'}
+                    {isSubscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    {isSubscribing ? 'Subscribing...' : 'I Understand'}
                   </button>
                 </div>
               </div>
@@ -609,7 +697,7 @@ export const APIDetailPage = () => {
                     placeholder="Search Endpoints..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-[var(--background)] border border-[var(--border)] rounded-xl text-sm outline-none focus:ring-2 transition-all"
+                    className="w-full pl-10 pr-4 py-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:ring-2 transition-all"
                     style={{ '--tw-ring-color': `${primaryColor}33` } as any}
                   />
                 </div>
@@ -621,7 +709,6 @@ export const APIDetailPage = () => {
                     key={ep.id}
                     onClick={() => {
                       setSelectedEndpoint(ep);
-                      setTestResult(null);
                       setShowMobileEndpoints(false);
                     }}
                     className={`w-full text-left px-3 py-3 rounded-xl transition-all flex flex-col gap-1 ${

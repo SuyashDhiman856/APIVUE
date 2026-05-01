@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Search, Menu, X, Terminal, LayoutDashboard, LogIn, Moon, Sun, LogOut, Palette, User } from 'lucide-react';
+import { Menu, X, Terminal, LayoutDashboard, LogIn, Moon, Sun, LogOut, Palette, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useThemeStore } from '../../store/useThemeStore';
@@ -17,15 +17,7 @@ export const Navbar = () => {
     { name: 'Marketplace', path: '/marketplace' },
   ];
 
-  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/marketplace?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
 
   return (
     <nav className="sticky top-0 z-50 w-full glass border-b border-[var(--border)]">
@@ -46,6 +38,17 @@ export const Navbar = () => {
             </Link>
 
             <div className="hidden md:flex items-center gap-6">
+              {isAuthenticated && (
+                <Link
+                  to={user?.role === 'org' ? '/dashboard/org' : '/dashboard'}
+                  className="text-sm font-medium transition-colors hover:text-primary"
+                  style={{ 
+                    color: location.pathname.includes('/dashboard') ? 'var(--primary)' : 'rgb(113 113 122)' 
+                  }}
+                >
+                  Dashboard
+                </Link>
+              )}
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
@@ -72,17 +75,6 @@ export const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
-            <form onSubmit={handleSearch} className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <input
-                type="text"
-                placeholder="Search APIs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-primary rounded-full text-sm w-64 transition-all outline-none text-black dark:text-white placeholder:text-zinc-400 shadow-sm"
-              />
-            </form>
-
             <div className="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800 mx-2" />
 
             <button
@@ -107,7 +99,7 @@ export const Navbar = () => {
 
             {isAuthenticated ? (
               <div className="flex items-center gap-4">
-                <Link to={user?.role === 'org' ? '/dashboard/org' : '/dashboard'} className="flex items-center gap-2 p-1.5 rounded-full border border-[var(--border)] hover:border-primary/50 transition-all">
+                <Link to={user?.role === 'org' ? '/profile/org' : '/profile'} className="flex items-center gap-2 p-1.5 rounded-full border border-[var(--border)] hover:border-primary/50 transition-all">
                   <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
                     <User className="w-4 h-4 text-zinc-500" />
                   </div>
@@ -154,6 +146,16 @@ export const Navbar = () => {
           animate={{ opacity: 1, y: 0 }}
           className="md:hidden bg-[var(--card)] border-b border-[var(--border)] px-4 py-4 space-y-4"
         >
+          {isAuthenticated && (
+            <Link
+              to={user?.role === 'org' ? '/dashboard/org' : '/dashboard'}
+              className="block text-base font-medium transition-colors"
+              style={{ color: location.pathname.includes('/dashboard') ? primaryColor : 'rgb(113 113 122)' }}
+              onClick={() => setIsOpen(false)}
+            >
+              Dashboard
+            </Link>
+          )}
           {navLinks.map((link) => (
             <Link
               key={link.path}
@@ -166,8 +168,28 @@ export const Navbar = () => {
             </Link>
           ))}
           <div className="pt-4 border-t border-[var(--border)] flex flex-col gap-3">
-            <Link to="/login" className="btn-secondary text-center" onClick={() => setIsOpen(false)}>Login</Link>
-            <Link to="/register" className="btn-primary text-center" onClick={() => setIsOpen(false)}>Get Started</Link>
+            {isAuthenticated ? (
+              <>
+                <Link 
+                  to={user?.role === 'org' ? '/profile/org' : '/profile'} 
+                  className="btn-secondary text-center" 
+                  onClick={() => setIsOpen(false)}
+                >
+                  My Profile
+                </Link>
+                <button 
+                  onClick={() => { logout(); setIsOpen(false); }} 
+                  className="btn-primary text-center bg-red-500 hover:bg-red-600 border-red-500 hover:border-red-600"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="btn-secondary text-center" onClick={() => setIsOpen(false)}>Login</Link>
+                <Link to="/register" className="btn-primary text-center" onClick={() => setIsOpen(false)}>Get Started</Link>
+              </>
+            )}
           </div>
         </motion.div>
       )}

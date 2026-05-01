@@ -12,6 +12,8 @@ import { MarketplacePage } from './pages/MarketplacePage';
 import { APIDetailPage } from './pages/APIDetailPage';
 import { UserDashboard } from './pages/UserDashboard';
 import { OrganizationDashboard } from './pages/OrganizationDashboard';
+import { ProfilePage } from './pages/ProfilePage';
+import { OrgProfilePage } from './pages/OrgProfilePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { CreateOrgPage } from './pages/CreateOrgPage';
@@ -69,6 +71,24 @@ const AppContent = () => {
                 element={
                   <ProtectedRoute role="org">
                     <OrganizationDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="/profile/org" 
+                element={
+                  <ProtectedRoute role="org">
+                    <OrgProfilePage />
                   </ProtectedRoute>
                 } 
               />

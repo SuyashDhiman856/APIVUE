@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Copy, Check, Terminal } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { atomDark, prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useThemeStore } from '../../store/useThemeStore';
 
 interface CodeExampleProps {
   language: string;
@@ -11,6 +12,7 @@ interface CodeExampleProps {
 
 export const CodeExample = ({ language, code }: CodeExampleProps) => {
   const [copied, setCopied] = useState(false);
+  const { mode } = useThemeStore();
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(code);
@@ -33,11 +35,11 @@ export const CodeExample = ({ language, code }: CodeExampleProps) => {
   };
 
   return (
-    <div className="bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 shadow-2xl">
+    <div className="bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 shadow-2xl transition-colors">
       <div className="flex items-center justify-between px-4 py-2 bg-zinc-900/50 border-b border-zinc-800">
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-zinc-500" />
-          <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">
+          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
             {language}
           </span>
         </div>
@@ -48,18 +50,18 @@ export const CodeExample = ({ language, code }: CodeExampleProps) => {
           {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
         </button>
       </div>
-      <div className="p-0">
+      <div className="p-0 bg-zinc-950 overflow-x-auto scrollbar-hide transition-colors">
         <SyntaxHighlighter
           language={languageMap[language] || 'text'}
           style={atomDark}
-          wrapLines={true}
-          lineProps={{ style: { wordBreak: 'break-all', whiteSpace: 'pre-wrap' } }}
+          wrapLines={false}
           customStyle={{
             margin: 0,
             padding: '1.5rem',
             fontSize: '0.875rem',
             lineHeight: '1.5',
             backgroundColor: 'transparent',
+            minWidth: 'fit-content'
           }}
         >
           {code}
@@ -252,14 +254,14 @@ class Program {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-lg w-full overflow-x-auto scrollbar-hide">
+      <div className="flex gap-2 p-1 bg-zinc-50 dark:bg-zinc-900 rounded-xl w-full overflow-x-auto scrollbar-hide border border-[var(--border)]">
         {languages.map((lang) => (
           <button
             key={lang.id}
             onClick={() => setActiveTab(lang.id)}
-            className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all whitespace-nowrap ${
+            className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all whitespace-nowrap ${
               activeTab === lang.id
-                ? 'bg-white dark:bg-zinc-800 text-black dark:text-white shadow-sm'
+                ? 'bg-white dark:bg-zinc-800 text-black dark:text-white shadow-sm border border-[var(--border)]'
                 : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'
             }`}
           >

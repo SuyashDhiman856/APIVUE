@@ -83,18 +83,43 @@ export const HomePage = () => {
     <div className="flex flex-col min-h-screen bg-[var(--background)]">
       {/* Hero Section */}
       <section className="relative pt-20 pb-32 overflow-hidden">
-        <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute inset-0 bg-[var(--background)]" />
+          {mode === 'light' ? (
+            <div className="absolute inset-0">
+              {/* Mesh Gradient Effect inspired by the image */}
+              <div className="absolute inset-0 opacity-60" style={{
+                backgroundImage: `
+                  radial-gradient(at 0% 0%, #3b82f6, transparent 70%),
+                  radial-gradient(at 100% 0%, #8b5cf6, transparent 70%),
+                  radial-gradient(at 100% 100%, #ec4899, transparent 70%),
+                  radial-gradient(at 0% 100%, #06b6d4, transparent 70%),
+                  radial-gradient(at 50% 50%, #6366f1, transparent 70%)
+                `
+              }} />
+              
+              {/* Floating Blobs for extra depth and movement */}
+              <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-blue-400/10 rounded-full blur-[120px] animate-pulse" />
+              <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-pink-400/10 rounded-full blur-[120px]" />
+              <div className="absolute top-[20%] right-[15%] w-64 h-64 bg-yellow-200/20 rounded-full blur-3xl" />
+            </div>
+          ) : (
+            <>
+              <div 
+                className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] animate-pulse" 
+                style={{ 
+                  backgroundColor: `${primaryColor}1a` 
+                }}
+              />
+              <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/10 rounded-full blur-[120px]" />
+            </>
+          )}
+          
+          {/* Subtle Grid Pattern */}
           <div 
-            className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] animate-pulse" 
+            className="absolute inset-0 opacity-[0.03] dark:opacity-20"
             style={{ 
-              backgroundColor: mode === 'dark' ? `${primaryColor}1a` : `${primaryColor}4d` 
-            }}
-          />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-200/20 dark:bg-indigo-500/10 rounded-full blur-[120px]" />
-          <div 
-            className="absolute inset-0 opacity-30 dark:opacity-20"
-            style={{ 
-              backgroundImage: `radial-gradient(circle at 2px 2px, var(--border) 1px, transparent 0)`,
+              backgroundImage: `radial-gradient(circle at 2px 2px, ${mode === 'light' ? 'black' : 'var(--border)'} 1px, transparent 0)`,
               backgroundSize: '40px 40px' 
             }}
           />
@@ -106,14 +131,33 @@ export const HomePage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 text-xs font-medium mb-8">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-medium mb-8">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               Now in Public Beta
             </span>
             
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-[var(--foreground)] mb-6">
-              The Modern Infrastructure <br />
-              <span className="text-zinc-400">for API Discovery.</span>
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
+              <span 
+                className="bg-clip-text text-transparent animate-gradient-move"
+                style={{ 
+                  backgroundImage: `linear-gradient(to right, ${primaryColor}, #6366f1, ${primaryColor})`,
+                  backgroundSize: '200% auto'
+                }}
+              >
+                APIVUE
+              </span>
+              <br />
+              <span 
+                className="text-4xl md:text-6xl bg-clip-text text-transparent animate-gradient-move inline-block mt-2"
+                style={{ 
+                  backgroundImage: mode === 'dark' 
+                    ? `linear-gradient(to right, #60a5fa, #22d3ee, #34d399)` // Blue/Cyan/Emerald for Dark
+                    : `linear-gradient(to right, #f97316, #f43f5e, #8b5cf6)`, // Orange/Rose/Purple for Light
+                  backgroundSize: '200% auto'
+                }}
+              >
+                AI-integrated API Marketplace
+              </span>
             </h1>
             
             <p className="max-w-2xl mx-auto text-lg text-zinc-500 mb-10">
@@ -208,12 +252,12 @@ export const HomePage = () => {
       </section>
 
       {/* How we are different Section */}
-      <section className="py-24 bg-zinc-50 dark:bg-zinc-900/50 border-y border-[var(--border)]">
+      <section className="py-24 bg-white dark:bg-zinc-900 border-y border-[var(--border)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-4xl font-bold mb-6">How we are different</h2>
-              <p className="text-zinc-500 text-lg mb-10">
+              <h2 className="text-4xl font-bold mb-6 text-zinc-900 dark:text-zinc-100">How we are different</h2>
+              <p className="text-zinc-600 dark:text-zinc-400 text-lg mb-10">
                 While other marketplaces focus on volume, we focus on quality and developer experience. We curate every API to ensure it meets our high standards.
               </p>
               <div className="space-y-6">
@@ -223,8 +267,8 @@ export const HomePage = () => {
                       <CheckCircle2 className="w-6 h-6 text-emerald-500" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-lg mb-1">{diff.title}</h4>
-                      <p className="text-zinc-500 text-sm">{diff.description}</p>
+                      <h4 className="font-bold text-lg mb-1 text-zinc-900 dark:text-zinc-100">{diff.title}</h4>
+                      <p className="text-zinc-600 dark:text-zinc-400 text-sm">{diff.description}</p>
                     </div>
                   </div>
                 ))}
@@ -279,22 +323,22 @@ export const HomePage = () => {
       </section>
 
       {/* Team Section */}
-      <section className="py-24 bg-zinc-900 text-white">
+      <section className="py-24 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white border-t border-[var(--border)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Meet the Team</h2>
-          <p className="text-zinc-400 max-w-2xl mx-auto mb-16">The passionate individuals building the future of API infrastructure.</p>
+          <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto mb-16">The passionate individuals building the future of API infrastructure.</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-12">
             {team.map((member, i) => (
               <div key={i} className="group">
-                <div className="relative mb-6 mx-auto w-48 h-48 rounded-full overflow-hidden border-4 border-zinc-800 group-hover:border-primary transition-colors duration-300">
+                <div className="relative mb-6 mx-auto w-48 h-48 rounded-full overflow-hidden border-4 border-zinc-200 dark:border-zinc-800 group-hover:border-primary transition-colors duration-300">
                   <img src={member.avatar} alt={member.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" referrerPolicy="no-referrer" />
                 </div>
                 <h4 className="text-xl font-bold mb-1">{member.name}</h4>
-                <p className="text-zinc-500 text-sm mb-4">{member.role}</p>
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-4">{member.role}</p>
                 <div className="flex justify-center gap-4">
-                  <Twitter className="w-4 h-4 text-zinc-600 hover:text-white cursor-pointer transition-colors" />
-                  <Linkedin className="w-4 h-4 text-zinc-600 hover:text-white cursor-pointer transition-colors" />
-                  <Github className="w-4 h-4 text-zinc-600 hover:text-white cursor-pointer transition-colors" />
+                  <Twitter className="w-4 h-4 text-zinc-400 hover:text-primary cursor-pointer transition-colors" />
+                  <Linkedin className="w-4 h-4 text-zinc-400 hover:text-primary cursor-pointer transition-colors" />
+                  <Github className="w-4 h-4 text-zinc-400 hover:text-primary cursor-pointer transition-colors" />
                 </div>
               </div>
             ))}
